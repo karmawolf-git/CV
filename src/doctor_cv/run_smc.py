@@ -1,17 +1,14 @@
-"""서울아산병원(AMC) 어댑터 실행기.
-
-목록/상세 엔드포인트를 순회하며 상세 HTML을 LLM으로 추출해 JSON으로 저장한다.
-LLM 추출에는 ANTHROPIC_API_KEY 환경변수가 필요하다.
+"""삼성서울병원(SMC) 어댑터 실행기.
 
 사용 예 (소량 테스트):
-    python -m doctor_cv.run_amc --max-depts 1 --max-per-dept 2
+    python -m doctor_cv.run_smc --max-depts 1 --max-per-dept 2
 """
 from __future__ import annotations
 
 import argparse
 from datetime import datetime, timezone
 
-from .adapters import amc
+from .adapters import smc
 from .crawl import crawl_details
 from .dotenv import load_env_file
 from .extractor import extract_doctor
@@ -19,19 +16,20 @@ from .fetcher import Fetcher
 from .store import dedup, save_doctors
 
 
-def crawl_amc(fetch, extract, *, now: str, max_depts=None, max_per_dept=None):
-    """AMC 상세 페이지를 순회·추출한다. 의사 단위로 오류를 격리한다.
-
-    반환: (doctors, errors) — errors는 (url, message) 리스트.
-    """
-    urls = (u for _code, u in amc.iter_detail_urls(fetch, max_depts=max_depts, max_per_dept=max_per_dept))
+def crawl_smc(fetch, extract, *, now: str, max_depts=None, max_per_dept=None):
+    urls = (
+        u
+        for _code, u in smc.iter_profile_urls(
+            fetch, max_depts=max_depts, max_per_dept=max_per_dept
+        )
+    )
     return crawl_details(
-        urls, fetch, extract, hospital=amc.HOSPITAL_NAME, hospital_url=amc.BASE, now=now
+        urls, fetch, extract, hospital=smc.HOSPITAL_NAME, hospital_url=smc.BASE, now=now
     )
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="서울아산 의료진 크롤러 (어댑터)")
+    parser = argparse.ArgumentParser(description="삼성서울병원 의료진 크롤러 (어댑터)")
     parser.add_argument("--out", default="data/doctors.json")
     parser.add_argument("--cache", default="cache")
     parser.add_argument("--min-delay", type=float, default=2.0)
@@ -39,13 +37,11 @@ def main() -> None:
     parser.add_argument("--max-per-dept", type=int, default=None, help="진료과당 의사 수 제한")
     args = parser.parse_args()
 
-    # 저장소 루트의 .env(gitignore됨)에서 ANTHROPIC_API_KEY 등을 로드(기존 env 우선).
     load_env_file(".env")
-
     fetcher = Fetcher(cache_dir=args.cache, min_delay=args.min_delay)
     now = datetime.now(timezone.utc).isoformat()
 
-    doctors, errors = crawl_amc(
+    doctors, errors = crawl_smc(
         lambda url: fetcher.fetch(url),
         extract_doctor,
         now=now,
@@ -54,7 +50,7 @@ def main() -> None:
     )
     result = dedup(doctors)
     save_doctors(result, args.out)
-    print("=== 서울아산 수집 요약 ===")
+    print("=== 삼성서울병원 수집 요약 ===")
     print(f"수집 의사: {len(result)}명, 실패: {len(errors)}건 -> {args.out}")
 
 
