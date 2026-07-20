@@ -1,4 +1,9 @@
-from doctor_cv.fetcher import Fetcher, looks_unrendered
+from doctor_cv.fetcher import DEFAULT_UA, Fetcher, looks_unrendered
+
+
+def test_default_user_agent_is_ascii():
+    # httpx는 헤더 값이 ASCII로 인코딩 가능해야 한다(비ASCII면 UnicodeEncodeError).
+    DEFAULT_UA.encode("ascii")
 
 
 def test_looks_unrendered_detects_empty_body():

@@ -8,7 +8,7 @@ from urllib.robotparser import RobotFileParser
 
 import httpx
 
-DEFAULT_UA = "DoctorCV-Research-Crawler/0.1 (+공개 의료진 정보 수집; 연구용)"
+DEFAULT_UA = "DoctorCV-Research-Crawler/0.1 (+public medical staff info; research use)"
 
 
 def looks_unrendered(html: str) -> bool:
