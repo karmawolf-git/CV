@@ -69,7 +69,8 @@ class Fetcher:
 
         self._throttle()
         with sync_playwright() as p:
-            browser = p.chromium.launch()
+            # 시스템에 설치된 Google Chrome을 사용한다(다운로드 Chromium 불필요).
+            browser = p.chromium.launch(channel="chrome")
             page = browser.new_page(user_agent=self.user_agent)
             page.goto(url, wait_until="networkidle", timeout=30000)
             html = page.content()
