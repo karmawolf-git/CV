@@ -14,7 +14,8 @@ import csv
 import io
 from pathlib import Path
 
-DEFAULT_TYPES = ("종합병원", "상급종합병원")
+# 공공데이터의 종별코드명은 상급종합병원을 "상급종합"으로 표기한다("병원" 없음).
+DEFAULT_TYPES = ("종합병원", "상급종합", "상급종합병원")
 
 # 헤더 부분일치 후보(왼쪽 우선).
 _NAME_KEYS = ("요양기관명", "병원명", "기관명")
@@ -22,7 +23,10 @@ _TYPE_KEYS = ("종별코드명", "종별명", "종별")
 _HOME_KEYS = ("병원홈페이지", "홈페이지", "url")
 _CODE_KEYS = ("암호화요양기호", "암호화요양기관기호", "요양기호", "요양기관기호")
 _REGION_KEYS = ("시도코드명", "시도명", "시도", "주소")
-_BEDS_KEYS = ("총병상수", "병상수", "허가병상수", "총병상")
+# 시설정보 CSV/XLSX에는 단일 '총병상수'가 없고 병상 종류별 컬럼('...병상수')으로 나뉜다.
+# 입원 병상만 합산하기 위해 아래 종류는 제외한다(입원 병상이 아님).
+_BED_COL_HINT = "병상수"
+_BED_EXCLUDE = ("분만실", "수술실", "응급실", "물리치료실")
 
 
 def _decode(path: str | Path) -> str:
@@ -35,11 +39,35 @@ def _decode(path: str | Path) -> str:
     return data.decode("utf-8", errors="replace")
 
 
+def _read_xlsx(path: str | Path) -> tuple[list[str], list[dict[str, str]]]:
+    import openpyxl
+
+    wb = openpyxl.load_workbook(path, read_only=True, data_only=True)
+    ws = wb[wb.sheetnames[0]]
+    it = ws.iter_rows(values_only=True)
+    headers = [(str(h).strip() if h is not None else "") for h in next(it)]
+    rows: list[dict[str, str]] = []
+    for r in it:
+        rows.append(
+            {h: ("" if v is None else str(v)).strip() for h, v in zip(headers, r)}
+        )
+    wb.close()
+    return headers, rows
+
+
 def _read_rows(path: str | Path) -> tuple[list[str], list[dict[str, str]]]:
+    if Path(path).suffix.lower() in (".xlsx", ".xlsm"):
+        return _read_xlsx(path)
     reader = csv.DictReader(io.StringIO(_decode(path)))
     headers = [h.strip() for h in (reader.fieldnames or [])]
     rows = [{(k.strip() if k else k): (v or "").strip() for k, v in r.items()} for r in reader]
     return headers, rows
+
+
+def _bed_columns(headers: list[str]) -> list[str]:
+    return [
+        h for h in headers if _BED_COL_HINT in h and not any(x in h for x in _BED_EXCLUDE)
+    ]
 
 
 def _find_col(headers: list[str], keys: tuple[str, ...]) -> str | None:
@@ -56,18 +84,22 @@ def _to_int(s: str) -> int | None:
 
 
 def load_bed_counts(facility_path: str | Path) -> dict[str, int]:
-    """시설정보 CSV에서 암호화요양기호 -> 총병상수 매핑을 만든다."""
+    """시설정보에서 암호화요양기호 -> 입원 병상 합계 매핑을 만든다.
+
+    단일 '총병상수' 컬럼이 없으므로 '...병상수' 컬럼들(분만실/수술실/응급실/물리치료실 제외)을
+    행마다 합산한다.
+    """
     headers, rows = _read_rows(facility_path)
     code_col = _find_col(headers, _CODE_KEYS)
-    beds_col = _find_col(headers, _BEDS_KEYS)
-    if not code_col or not beds_col:
-        raise ValueError(f"시설 CSV에서 코드/병상수 컬럼을 못 찾음: headers={headers}")
+    bed_cols = _bed_columns(headers)
+    if not code_col or not bed_cols:
+        raise ValueError(f"시설 파일에서 코드/병상 컬럼을 못 찾음: headers={headers}")
     out: dict[str, int] = {}
     for r in rows:
         code = r.get(code_col)
-        beds = _to_int(r.get(beds_col, ""))
-        if code and beds is not None:
-            out[code] = beds
+        if not code:
+            continue
+        out[code] = sum((_to_int(r.get(c, "")) or 0) for c in bed_cols)
     return out
 
 
@@ -105,12 +137,15 @@ def load_catalog(
         if min_beds is not None and facility_path is not None:
             if beds is None or beds < min_beds:
                 continue
+        homepage = r.get(home_col, "") if home_col else ""
+        if homepage.lower() == "none":  # 홈페이지 없음이 문자열 'None'으로 저장됨
+            homepage = ""
         catalog.append(
             {
                 "name": r.get(name_col, ""),
                 "type": r.get(type_col, ""),
                 "region": r.get(region_col, "") if region_col else "",
-                "homepage": r.get(home_col, "") if home_col else "",
+                "homepage": homepage,
                 "beds": beds,
                 "code": code,
             }

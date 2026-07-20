@@ -56,3 +56,25 @@ def test_load_bed_counts(tmp_path):
     fac = _write(tmp_path, "fac.csv", FACILITY_CSV)
     beds = load_bed_counts(fac)
     assert beds["CODE_AMC"] == 2700 and beds["CODE_SMALL"] == 120
+
+
+def test_load_bed_counts_sums_multiple_columns_excluding_noninpatient(tmp_path):
+    # 실제 구조: 단일 총병상수 없음. 입원 병상 합산, 수술실/응급실 등은 제외.
+    fac_multi = (
+        "암호화요양기호,일반입원실상급병상수,일반입원실일반병상수,성인중환자병상수,수술실병상수,응급실병상수\n"
+        "CODE_X,100,180,20,15,10\n"
+    )
+    fac = _write(tmp_path, "facm.csv", fac_multi)
+    beds = load_bed_counts(fac)
+    # 100+180+20 = 300 (수술실 15, 응급실 10 제외)
+    assert beds["CODE_X"] == 300
+
+
+def test_homepage_none_string_becomes_empty(tmp_path):
+    basic = (
+        "요양기관명,종별코드명,병원홈페이지,암호화요양기호\n"
+        "널병원,종합병원,None,CODE_NULL\n"
+    )
+    p = _write(tmp_path, "b.csv", basic)
+    cat = load_catalog(p, facility_path=None, min_beds=None)
+    assert cat[0]["homepage"] == ""
