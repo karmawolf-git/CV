@@ -26,14 +26,15 @@ hospitals:
   - id: snuh
     name: 서울대학교병원
     base_url: https://www.snuh.org
-    doctor_index_url: https://www.snuh.org/reservation/reservDoctor.do
+    doctor_index_url: https://www.snuh.org/reservation/meddept/main.do
     notes: >-
-      시드 경로(/reservation/)가 robots.txt로 차단됨. 허용되는 다른 의료진 소개
-      경로를 찾아야 함(미확인). 전용 어댑터 미구현.
+      제외 대상. 진료과·의료진 디렉터리가 모두 /reservation/ 아래에 있는데
+      robots.txt가 /reservation/를 전면 차단함 → 윤리적으로 크롤링하지 않음.
   - id: snubh
     name: 분당서울대학교병원
     base_url: https://www.snubh.org
-    doctor_index_url: https://www.snubh.org/medical/drIntroList.do
+    doctor_index_url: https://www.snubh.org/medical/drMedicalTeam2.do
     notes: >-
-      robots 허용. 페이지가 거의 비어 반환됨(JS 렌더링/URL 재확인 필요).
-      전용 어댑터 미구현.
+      robots 허용. 부서(getDeptList.do XML)→부서별 목록(drMedicalTeam.do)→상세
+      (drIntroduce.do). 상세가 커서 trim_detail로 프로필 블록만 추출, 이름은 목록
+      카드에서 주입. 전용 어댑터: adapters/snubh.py, 실행: run_snubh.py

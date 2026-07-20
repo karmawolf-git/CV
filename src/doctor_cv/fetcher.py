@@ -12,13 +12,17 @@ DEFAULT_UA = "DoctorCV-Research-Crawler/0.1 (+public medical staff info; researc
 
 
 def looks_unrendered(html: str) -> bool:
-    """본문이 비어 있거나 지나치게 짧으면 JS 렌더링이 필요하다고 판단."""
+    """본문이 비어 있거나 지나치게 짧으면 JS 렌더링이 필요하다고 판단.
+
+    <body>가 아예 없으면 HTML 문서가 아니라 XML/JSON 같은 ajax 응답이므로,
+    JS 렌더링 대상이 아니라고 보고 False를 반환한다(불필요한 Playwright 폴백 방지)."""
     from bs4 import BeautifulSoup
 
     soup = BeautifulSoup(html, "html.parser")
     body = soup.body
-    text = body.get_text(strip=True) if body else ""
-    return len(text) < 100
+    if body is None:
+        return False
+    return len(body.get_text(strip=True)) < 100
 
 
 class Fetcher:

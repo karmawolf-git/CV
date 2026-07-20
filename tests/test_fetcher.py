@@ -15,6 +15,12 @@ def test_looks_unrendered_false_for_rich_content():
     assert looks_unrendered(html) is False
 
 
+def test_looks_unrendered_false_for_xml_without_body():
+    # XML/JSON ajax 응답(<body> 없음)은 렌더 대상이 아님 → 폴백하지 않는다.
+    xml = "<data><DEPT><TP>H</TP><DPCD>CCC</DPCD></DEPT></data>"
+    assert looks_unrendered(xml) is False
+
+
 def test_fetch_uses_cache_when_present(tmp_path):
     f = Fetcher(cache_dir=tmp_path, min_delay=0.0)
     url = "https://ex.com/doctor/1"
