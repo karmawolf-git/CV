@@ -12,6 +12,7 @@ import argparse
 from datetime import datetime, timezone
 
 from .adapters import amc
+from .dotenv import load_env_file
 from .extractor import extract_doctor
 from .fetcher import Fetcher
 from .models import Doctor
@@ -51,6 +52,9 @@ def main() -> None:
     parser.add_argument("--max-depts", type=int, default=None, help="진료과 수 제한")
     parser.add_argument("--max-per-dept", type=int, default=None, help="진료과당 의사 수 제한")
     args = parser.parse_args()
+
+    # 저장소 루트의 .env(gitignore됨)에서 ANTHROPIC_API_KEY 등을 로드(기존 env 우선).
+    load_env_file(".env")
 
     fetcher = Fetcher(cache_dir=args.cache, min_delay=args.min_delay)
     now = datetime.now(timezone.utc).isoformat()
