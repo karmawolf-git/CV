@@ -1,26 +1,39 @@
+# 빅5 종합병원. 2026-07-21 실사이트 보정 결과 반영.
+# 주의: 빅5 의료진 페이지는 대부분 JS 앱이라 제네릭 discovery로는 수집이 안 되며,
+# 병원별 어댑터(src/doctor_cv/adapters/)가 필요하다. 현재 서울아산(amc) 어댑터만 구현됨.
 hospitals:
   - id: amc
     name: 서울아산병원
     base_url: https://www.amc.seoul.kr
-    doctor_index_url: https://www.amc.seoul.kr/asan/depts/deptSearch.do?menuId=110
-    notes: JS 렌더링 가능성 높음
+    doctor_index_url: https://www.amc.seoul.kr/asan/staff/base/staffBaseInfoList.do
+    notes: >-
+      의료진 목록 진입점(보정 완료). JS 앱이나 하위 엔드포인트는 서버 렌더링이라
+      httpx로 수집 가능. 전용 어댑터: adapters/amc.py, 실행: run_amc.py
   - id: smc
     name: 삼성서울병원
     base_url: https://www.samsunghospital.com
     doctor_index_url: https://www.samsunghospital.com/home/reservation/doctorList.do
-    notes: JS 렌더링 가능성 높음
+    notes: >-
+      시드 URL 404, 실제 의료진 목록 URL 재확인 필요. robots는 대체로 허용
+      (/cv.do 등 일부만 차단). 전용 어댑터 미구현.
   - id: severance
     name: 세브란스병원
     base_url: https://sev.severance.healthcare
     doctor_index_url: https://sev.severance.healthcare/sev/doctor/doctor-list.do
-    notes: JS 렌더링 가능성 높음
+    notes: >-
+      제외 대상. robots.txt가 /professor-medicine 등 교수 디렉터리를 차단함
+      → 윤리적으로 크롤링하지 않음.
   - id: snuh
     name: 서울대학교병원
     base_url: https://www.snuh.org
     doctor_index_url: https://www.snuh.org/reservation/reservDoctor.do
-    notes: JS 렌더링 가능성 높음
+    notes: >-
+      시드 경로(/reservation/)가 robots.txt로 차단됨. 허용되는 다른 의료진 소개
+      경로를 찾아야 함(미확인). 전용 어댑터 미구현.
   - id: snubh
     name: 분당서울대학교병원
     base_url: https://www.snubh.org
     doctor_index_url: https://www.snubh.org/medical/drIntroList.do
-    notes: JS 렌더링 가능성 높음
+    notes: >-
+      robots 허용. 페이지가 거의 비어 반환됨(JS 렌더링/URL 재확인 필요).
+      전용 어댑터 미구현.
