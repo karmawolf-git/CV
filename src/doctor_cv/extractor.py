@@ -75,6 +75,26 @@ def clean_html(html: str) -> str:
     return soup.get_text(separator=" ", strip=True)
 
 
+def _default_client():
+    """anthropic 클라이언트를 OS 신뢰저장소(truststore) TLS로 만든다.
+
+    회사망 SSL 검사로 certifi 기본 검증은 api.anthropic.com 연결이 실패한다
+    (APIConnectionError). truststore가 없으면 기본 클라이언트로 폴백한다.
+    """
+    import anthropic
+
+    try:
+        import ssl
+
+        import httpx
+        import truststore
+
+        ctx = truststore.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        return anthropic.Anthropic(http_client=httpx.Client(verify=ctx, timeout=60.0))
+    except Exception:  # noqa: BLE001
+        return anthropic.Anthropic()
+
+
 def extract_doctor(
     html: str,
     *,
@@ -86,9 +106,7 @@ def extract_doctor(
     model: str | None = None,
 ) -> Doctor:
     if client is None:
-        import anthropic
-
-        client = anthropic.Anthropic()
+        client = _default_client()
     model = model or DEFAULT_MODEL
 
     content = clean_html(html)
