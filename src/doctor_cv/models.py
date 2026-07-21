@@ -32,8 +32,11 @@ class Doctor(BaseModel):
     education: list[EducationItem] = Field(default_factory=list)
     licenses: list[LicenseItem] = Field(default_factory=list)
     career: list[CareerItem] = Field(default_factory=list)
-    societies: list[str] = Field(default_factory=list)
-    publications: list[str] = Field(default_factory=list)
+    training: list[CareerItem] = Field(default_factory=list)  # 연수
+    societies: list[str] = Field(default_factory=list)  # 학회활동
+    awards: list[str] = Field(default_factory=list)  # 수상이력
+    research: list[str] = Field(default_factory=list)  # 연구분야
+    publications: list[str] = Field(default_factory=list)  # 논문·저서
     source_url: str
     crawled_at: str
 

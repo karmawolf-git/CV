@@ -64,7 +64,10 @@ function card(d) {
     ${listBlock("학력", d.education)}
     ${listBlock("면허·자격", d.licenses)}
     ${listBlock("경력", d.career)}
-    ${listBlock("학회", d.societies)}
+    ${listBlock("연수", d.training)}
+    ${listBlock("학회활동", d.societies)}
+    ${listBlock("수상이력", d.awards)}
+    ${listBlock("연구분야", d.research)}
     ${listBlock("논문·저서", d.publications)}
   </div>`;
 }
