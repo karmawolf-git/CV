@@ -18,14 +18,14 @@ from .fetcher import Fetcher
 from .store import dedup, save_doctors
 
 
-def crawl_amc(fetch, extract, *, now: str, max_depts=None, max_per_dept=None):
+def crawl_amc(fetch, extract, *, now: str, max_depts=None, max_per_dept=None, depts=None):
     """AMC 의사별로 프로필 탭(소개·학력/경력·학술활동)을 합쳐 추출한다. 의사 단위 오류 격리.
 
     반환: (doctors, errors) — errors는 (url, message) 리스트.
     """
     doctors = []
     errors = []
-    for code, emp_id in amc.iter_doctor_refs(fetch, max_depts=max_depts, max_per_dept=max_per_dept):
+    for code, emp_id in amc.iter_doctor_refs(fetch, max_depts=max_depts, max_per_dept=max_per_dept, depts=depts):
         source = amc.detail_url(emp_id, code)
         try:
             combined = "\n".join(fetch(u) for u in amc.detail_tab_urls(emp_id, code))

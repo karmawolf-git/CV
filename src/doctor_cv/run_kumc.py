@@ -15,10 +15,12 @@ from .fetcher import Fetcher
 from .store import dedup, save_doctors
 
 
-def crawl_kumc_hospital(fetch, *, hospital, base_url, inst_no, now, max_doctors=None):
+def crawl_kumc_hospital(fetch, *, hospital, base_url, inst_no, now, max_doctors=None, depts=None, max_per_dept=None):
     """KUMC 병원 1곳을 JSON API로 수집한다(LLM 불필요). 의사 단위 오류 격리."""
     doctors, errors = [], []
-    for dr_no in kumc.iter_doctor_ids(fetch, base_url, inst_no, max_doctors=max_doctors):
+    for dr_no in kumc.iter_doctor_ids(
+        fetch, base_url, inst_no, max_doctors=max_doctors, depts=depts, max_per_dept=max_per_dept
+    ):
         try:
             doctors.append(kumc.build_doctor(fetch, base_url, dr_no, hospital=hospital, crawled_at=now))
         except Exception as exc:  # noqa: BLE001 - 의사 단위 격리

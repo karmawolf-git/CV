@@ -71,16 +71,22 @@ def list_page_url(base_url: str, dr_no: str = "") -> str:
     return f"{url}#dr-{dr_no}" if dr_no else url
 
 
-def parse_dept_codes(dept_json_text: str) -> list[str]:
+def parse_departments(dept_json_text: str) -> list[tuple[str, str]]:
+    """부서 JSON에서 (deptCd, deptNm) 튜플을 순서 유지·중복 제거하여 반환."""
     data = json.loads(dept_json_text)
-    codes: list[str] = []
+    out: list[tuple[str, str]] = []
     seen: set[str] = set()
     for d in data:
         cd = str(d.get("deptCd", "")).strip()
+        nm = (d.get("deptNm") or "").strip()
         if cd and cd not in seen:
             seen.add(cd)
-            codes.append(cd)
-    return codes
+            out.append((cd, nm))
+    return out
+
+
+def parse_dept_codes(dept_json_text: str) -> list[str]:
+    return [cd for cd, _nm in parse_departments(dept_json_text)]
 
 
 def parse_doctor_ids(doctor_json_text: str) -> list[tuple[str, str]]:
@@ -179,13 +185,20 @@ def to_doctor(detail: dict, *, hospital: str, base_url: str, crawled_at: str) ->
     )
 
 
-def iter_doctor_details(fetch, base_url: str, *, max_depts: int | None = None, max_per_dept: int | None = None):
-    """``fetch(url)->text`` 로 의사별 상세 dict를 순차 생성. drNo 기준 병원 내 중복 제거."""
-    codes = parse_dept_codes(fetch(dept_url(base_url)))
+def iter_doctor_details(fetch, base_url: str, *, max_depts=None, max_per_dept=None, depts=None):
+    """``fetch(url)->text`` 로 의사별 상세 dict를 순차 생성. drNo 기준 병원 내 중복 제거.
+
+    depts(진료과명 부분일치 리스트)가 주어지면 해당 과만 수집한다.
+    """
+    from ..deptfilter import dept_matches
+
+    pairs = parse_departments(fetch(dept_url(base_url)))
+    if depts:
+        pairs = [(cd, nm) for cd, nm in pairs if dept_matches(nm, depts)]
     if max_depts is not None:
-        codes = codes[:max_depts]
+        pairs = pairs[:max_depts]
     seen: set[str] = set()
-    for cd in codes:
+    for cd, _nm in pairs:
         count = 0
         for drno, _name in parse_doctor_ids(fetch(doctor_url(base_url, cd))):
             if drno in seen:

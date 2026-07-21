@@ -42,12 +42,30 @@ _RECORD_MAP = {
 }
 
 
-def list_url(base_url: str, inst_no: str, *, start: int = 1, rows: int = 100) -> str:
+def list_url(base_url: str, inst_no: str, *, start: int = 1, rows: int = 100, dept_cd: str = "") -> str:
     q = urlencode({
         "startIndex": start, "pageRow": rows, "drName": "", "langType": "kr",
-        "instNo": inst_no, "deptClsf": "A", "deptCd": "", "chosung": "",
+        "instNo": inst_no, "deptClsf": "A", "deptCd": dept_cd, "chosung": "",
     })
     return f"{base_url}/api/doctorApi.do?{q}"
+
+
+def dept_list_url(base_url: str, inst_no: str) -> str:
+    return f"{base_url}/api/department.do?{urlencode({'instNo': inst_no, 'langType': 'kr', 'deptClsf': 'A'})}"
+
+
+def parse_departments(dept_json_text: str) -> list[tuple[str, str]]:
+    """department.do JSON에서 (deptCd, deptNm) 리스트."""
+    j = json.loads(dept_json_text)
+    lst = j.get("deptList") if isinstance(j, dict) else (j if isinstance(j, list) else [])
+    out, seen = [], set()
+    for d in lst or []:
+        cd = str(d.get("deptCd", "")).strip()
+        nm = (d.get("deptNm") or "").strip()
+        if cd and cd not in seen:
+            seen.add(cd)
+            out.append((cd, nm))
+    return out
 
 
 def basic_url(base_url: str, dr_no: str) -> str:
@@ -158,13 +176,12 @@ def parse_publications(book_json_text: str, thesis_json_text: str | None) -> lis
     return pubs
 
 
-def iter_doctor_ids(fetch, base_url: str, inst_no: str, *, max_doctors: int | None = None, rows: int = 100):
-    """``fetch(url)->text`` 로 drNo를 순차 생성(페이지네이션, 중복 제거)."""
-    seen: set[str] = set()
+def _iter_dept_ids(fetch, base_url, inst_no, dept_cd, *, rows, per_cap, seen):
+    """한 진료과(dept_cd 비면 전체)의 drNo를 페이지네이션하며 생성. per_cap은 이 과 내 상한."""
     yielded = 0
     start = 1
     while True:
-        drnos, total = parse_list(fetch(list_url(base_url, inst_no, start=start, rows=rows)))
+        drnos, total = parse_list(fetch(list_url(base_url, inst_no, start=start, rows=rows, dept_cd=dept_cd)))
         if not drnos:
             break
         for dr in drnos:
@@ -173,11 +190,29 @@ def iter_doctor_ids(fetch, base_url: str, inst_no: str, *, max_doctors: int | No
             seen.add(dr)
             yield dr
             yielded += 1
-            if max_doctors is not None and yielded >= max_doctors:
+            if per_cap is not None and yielded >= per_cap:
                 return
         start += rows
         if total and start > total:
             break
+
+
+def iter_doctor_ids(fetch, base_url, inst_no, *, max_doctors=None, rows=100, depts=None, max_per_dept=None):
+    """drNo를 순차 생성. depts(진료과명 부분일치)가 있으면 해당 과만, 과당 max_per_dept명."""
+    from ..deptfilter import dept_matches
+
+    seen: set[str] = set()
+    if depts:
+        pairs = [(cd, nm) for cd, nm in parse_departments(fetch(dept_list_url(base_url, inst_no))) if dept_matches(nm, depts)]
+        total_yielded = 0
+        for cd, _nm in pairs:
+            for dr in _iter_dept_ids(fetch, base_url, inst_no, cd, rows=rows, per_cap=max_per_dept, seen=seen):
+                yield dr
+                total_yielded += 1
+                if max_doctors is not None and total_yielded >= max_doctors:
+                    return
+    else:
+        yield from _iter_dept_ids(fetch, base_url, inst_no, "", rows=rows, per_cap=max_doctors, seen=seen)
 
 
 def build_doctor(fetch, base_url: str, dr_no: str, *, hospital: str, crawled_at: str) -> Doctor:

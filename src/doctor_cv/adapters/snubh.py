@@ -25,6 +25,10 @@ DETAIL_PATH = "/medical/drIntroduce.do"
 
 # 태그명 대소문자 무시(정적 XML은 대문자, 혹시 렌더러가 소문자로 바꿔도 대응).
 _DEPT_RE = re.compile(r"<TP>([^<]+)</TP>\s*<DPCD>([^<]+)</DPCD>", re.IGNORECASE)
+# <NM>이름</NM><TP>H</TP><DPCD>CCC</DPCD>
+_DEPT_FULL_RE = re.compile(
+    r"<NM>([^<]*)</NM>\s*<TP>([^<]+)</TP>\s*<DPCD>([^<]+)</DPCD>", re.IGNORECASE
+)
 _DR_RE = re.compile(
     r"page_move\(\s*'drIntroduce'\s*,\s*\{\s*"
     r"'sDpCdDtl'\s*:\s*'([^']*)'\s*,\s*"
@@ -59,6 +63,16 @@ def detail_url(dp_tp: str, dp_cd: str, dpcd_dtl: str, dr_sid: str, stf_no: str) 
 def parse_depts(xml: str) -> list[tuple[str, str]]:
     """부서 XML에서 (DP_TP, DP_CD) 쌍을 순서 유지·중복 제거하여 반환."""
     return list(dict.fromkeys(_DEPT_RE.findall(xml)))
+
+
+def parse_departments(xml: str) -> list[tuple[str, str, str]]:
+    """(DP_TP, DP_CD, 이름) 리스트. (DP_CD 기준 중복 제거)"""
+    out, seen = [], set()
+    for name, tp, cd in _DEPT_FULL_RE.findall(xml):
+        if cd not in seen:
+            seen.add(cd)
+            out.append((tp, cd, name.strip()))
+    return out
 
 
 def parse_doctors(list_html: str) -> list[tuple[str, str, str, str]]:
@@ -125,13 +139,22 @@ def trim_detail(html: str, *, max_len: int = 8000, per_block: int = 6000, total_
     return html if best is None else str(best)
 
 
-def iter_detail_urls(fetch, *, max_depts: int | None = None, max_per_dept: int | None = None):
-    """``fetch(url)->html`` 콜러블로 상세 URL을 (dp_cd, url)로 순차 생성. sDrSid 전역 중복 제거."""
-    depts = parse_depts(fetch(dept_list_url()))
+def iter_detail_urls(fetch, *, max_depts=None, max_per_dept=None, depts=None):
+    """``fetch(url)->html`` 콜러블로 상세 URL을 (dp_cd, url, name)로 순차 생성. sDrSid 전역 중복 제거.
+
+    depts(진료과명 부분일치)가 있으면 해당 과만.
+    """
+    from ..deptfilter import dept_matches
+
+    xml = fetch(dept_list_url())
+    if depts:
+        dept_list = [(tp, cd) for tp, cd, nm in parse_departments(xml) if dept_matches(nm, depts)]
+    else:
+        dept_list = parse_depts(xml)
     if max_depts is not None:
-        depts = depts[:max_depts]
+        dept_list = dept_list[:max_depts]
     seen: set[str] = set()
-    for dp_tp, dp_cd in depts:
+    for dp_tp, dp_cd in dept_list:
         doctors = parse_doctors(fetch(list_url(dp_tp, dp_cd)))
         count = 0
         for name, dtl, sid, stf in doctors:

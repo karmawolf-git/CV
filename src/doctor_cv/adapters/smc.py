@@ -22,6 +22,7 @@ LIST_PATH = "/home/reservation/doctorInfoLists.do"
 PROFILE_PATH = "/home/reservation/common/doctorProfile.do"
 
 _OPT_RE = re.compile(r'<option\s+value="([^"]+)"', re.IGNORECASE)
+_OPT_NAME_RE = re.compile(r'<option\s+value="([^"]+)"[^>]*>\s*([^<]+?)\s*</option>', re.IGNORECASE)
 _DRNO_RE = re.compile(r"doctorProfile\.do\?DR_NO=(\d+)")
 
 
@@ -53,6 +54,17 @@ def parse_dept_codes(gubun_html: str) -> list[str]:
     return list(dict.fromkeys(codes))
 
 
+def parse_departments(gubun_html: str) -> list[tuple[str, str]]:
+    """(진료과 코드, 이름) 리스트(빈 값 제외)."""
+    out, seen = [], set()
+    for code, name in _OPT_NAME_RE.findall(gubun_html):
+        code = code.strip()
+        if code and code not in seen:
+            seen.add(code)
+            out.append((code, name.strip()))
+    return out
+
+
 def parse_doctor_ids(list_html: str) -> list[str]:
     """목록 HTML의 doctorProfile.do?DR_NO=... 에서 DR_NO를 순서 유지·중복 제거하여 반환."""
     return list(dict.fromkeys(_DRNO_RE.findall(list_html)))
@@ -65,13 +77,20 @@ def iter_profile_urls(
     max_depts: int | None = None,
     max_per_dept: int | None = None,
     max_pages: int = 30,
+    depts=None,
 ):
     """``fetch(url)->html`` 콜러블로 상세 프로필 URL을 (dept_code, url)로 순차 생성.
 
     진료과별로 cPage를 1부터 증가시키며, 새 DR_NO가 없는 페이지를 만나면 그 진료과를 종료한다.
-    DR_NO는 전 진료과에 걸쳐 중복 제거한다.
+    DR_NO는 전 진료과에 걸쳐 중복 제거한다. depts(진료과명 부분일치)가 있으면 해당 과만.
     """
-    codes = parse_dept_codes(fetch(gubun_url(dp_type)))
+    from ..deptfilter import dept_matches
+
+    gubun = fetch(gubun_url(dp_type))
+    if depts:
+        codes = [cd for cd, nm in parse_departments(gubun) if dept_matches(nm, depts)]
+    else:
+        codes = parse_dept_codes(gubun)
     if max_depts is not None:
         codes = codes[:max_depts]
     seen: set[str] = set()

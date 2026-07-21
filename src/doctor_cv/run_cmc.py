@@ -15,11 +15,11 @@ from .fetcher import Fetcher
 from .store import dedup, save_doctors
 
 
-def crawl_cmc_hospital(fetch, *, hospital: str, base_url: str, now: str, max_depts=None, max_per_dept=None):
+def crawl_cmc_hospital(fetch, *, hospital: str, base_url: str, now: str, max_depts=None, max_per_dept=None, depts=None):
     doctors = []
     errors = []
     try:
-        details = cmc.iter_doctor_details(fetch, base_url, max_depts=max_depts, max_per_dept=max_per_dept)
+        details = cmc.iter_doctor_details(fetch, base_url, max_depts=max_depts, max_per_dept=max_per_dept, depts=depts)
         for detail in details:
             doctors.append(cmc.to_doctor(detail, hospital=hospital, base_url=base_url, crawled_at=now))
     except Exception as exc:  # noqa: BLE001 - 병원 단위 격리

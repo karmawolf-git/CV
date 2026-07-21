@@ -16,11 +16,11 @@ from .fetcher import Fetcher
 from .store import dedup, save_doctors
 
 
-def crawl_smc(fetch, extract, *, now: str, max_depts=None, max_per_dept=None):
+def crawl_smc(fetch, extract, *, now: str, max_depts=None, max_per_dept=None, depts=None):
     urls = (
         u
         for _code, u in smc.iter_profile_urls(
-            fetch, max_depts=max_depts, max_per_dept=max_per_dept
+            fetch, max_depts=max_depts, max_per_dept=max_per_dept, depts=depts
         )
     )
     return crawl_details(

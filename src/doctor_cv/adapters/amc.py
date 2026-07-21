@@ -21,6 +21,10 @@ LIST_PATH = "/asan/staff/base/staffBaseInfoList.do"
 DETAIL_PATH = "/asan/staff/base/staffBaseInfoDetail.do"
 
 _DEPT_RE = re.compile(r"fnSelectDeptPopup\('([^']+)'\)")
+# 진료과 링크: <a ... onclick="fnSelectDeptPopup('D001')...">가정의학과</a>
+_DEPT_LINK_RE = re.compile(
+    r"fnSelectDeptPopup\('([^']+)'\)[^>]*>\s*([^<]+?)\s*<", re.IGNORECASE
+)
 _DR_RE = re.compile(r"fnDrDetail\('([^']+)','([^']+)'\)")
 
 
@@ -59,14 +63,34 @@ def parse_dept_codes(index_html: str) -> list[str]:
     return list(dict.fromkeys(_DEPT_RE.findall(index_html)))
 
 
+def parse_departments(index_html: str) -> list[tuple[str, str]]:
+    """(진료과 코드, 이름) 리스트. 이름은 링크 텍스트에서."""
+    out, seen = [], set()
+    for code, name in _DEPT_LINK_RE.findall(index_html):
+        code = code.strip()
+        if code and code not in seen:
+            seen.add(code)
+            out.append((code, name.strip()))
+    return out
+
+
 def parse_doctor_ids(list_html: str) -> list[str]:
     """진료과 목록 HTML에서 의사 empId를 순서 유지·중복 제거하여 반환."""
     return list(dict.fromkeys(m[0] for m in _DR_RE.findall(list_html)))
 
 
-def iter_doctor_refs(fetch, *, max_depts: int | None = None, max_per_dept: int | None = None):
-    """``fetch(url)->html`` 콜러블로 (dept_code, emp_id)를 순차 생성. empId 기준 전역 중복 제거."""
-    codes = parse_dept_codes(fetch(index_url()))
+def iter_doctor_refs(fetch, *, max_depts=None, max_per_dept=None, depts=None):
+    """``fetch(url)->html`` 콜러블로 (dept_code, emp_id)를 순차 생성. empId 기준 전역 중복 제거.
+
+    depts(진료과명 부분일치)가 주어지면 해당 과만.
+    """
+    from ..deptfilter import dept_matches
+
+    index_html = fetch(index_url())
+    if depts:
+        codes = [cd for cd, nm in parse_departments(index_html) if dept_matches(nm, depts)]
+    else:
+        codes = parse_dept_codes(index_html)
     if max_depts is not None:
         codes = codes[:max_depts]
     seen: set[str] = set()

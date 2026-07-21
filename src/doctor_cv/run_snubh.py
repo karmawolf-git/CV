@@ -15,7 +15,7 @@ from .fetcher import Fetcher
 from .store import dedup, save_doctors
 
 
-def crawl_snubh(fetch, extract, *, now: str, max_depts=None, max_per_dept=None):
+def crawl_snubh(fetch, extract, *, now: str, max_depts=None, max_per_dept=None, depts=None):
     """상세 페이지가 크므로 프로필 블록만 잘라내고, 목록에서 얻은 이름을 주입해 추출한다.
 
     (상세 경력 블록에는 이름이 없어 목록 카드의 이름을 앞에 덧붙인다.)
@@ -23,7 +23,7 @@ def crawl_snubh(fetch, extract, *, now: str, max_depts=None, max_per_dept=None):
     doctors = []
     errors = []
     for _cd, url, name in snubh.iter_detail_urls(
-        fetch, max_depts=max_depts, max_per_dept=max_per_dept
+        fetch, max_depts=max_depts, max_per_dept=max_per_dept, depts=depts
     ):
         try:
             trimmed = snubh.trim_detail(fetch(url))
