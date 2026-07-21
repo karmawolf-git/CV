@@ -5,13 +5,18 @@
 """
 from __future__ import annotations
 
-from .adapters import amc, smc, snubh
+from .adapters import amc, cmc, smc, snubh
 
 # 병원명 -> 어댑터 모듈. 카탈로그의 요양기관명과 매칭한다.
+# CMC 계열은 공용 어댑터(cmc) 하나가 여러 병원을 담당한다.
 ADAPTERS = {
     amc.HOSPITAL_NAME: amc,      # 서울아산병원
     smc.HOSPITAL_NAME: smc,      # 삼성서울병원
     snubh.HOSPITAL_NAME: snubh,  # 분당서울대학교병원
+    "서울성모병원": cmc,
+    "부천성모병원": cmc,
+    "은평성모병원": cmc,
+    "성빈센트병원": cmc,
 }
 
 

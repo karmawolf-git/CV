@@ -11,6 +11,26 @@ import httpx
 DEFAULT_UA = "DoctorCV-Research-Crawler/0.1 (+public medical staff info; research use)"
 
 
+def _make_ssl_context():
+    """OS 신뢰저장소(truststore)로 SSL 컨텍스트를 만든다.
+
+    이 환경은 회사망 SSL 검사/중간 인증서 문제로 certifi 기본 번들로는 일부
+    .or.kr 사이트 검증이 실패한다. Chrome처럼 OS 저장소를 쓰면 해결된다.
+    truststore가 없으면 httpx 기본(certifi) 검증으로 폴백한다.
+    """
+    try:
+        import ssl
+
+        import truststore
+
+        return truststore.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+    except Exception:  # noqa: BLE001
+        return True
+
+
+_SSL_CONTEXT = _make_ssl_context()
+
+
 def looks_unrendered(html: str) -> bool:
     """본문이 비어 있거나 지나치게 짧으면 JS 렌더링이 필요하다고 판단.
 
@@ -64,7 +84,13 @@ class Fetcher:
 
     def _default_static(self, url: str) -> str:
         self._throttle()
-        resp = httpx.get(url, headers={"User-Agent": self.user_agent}, timeout=20.0, follow_redirects=True)
+        resp = httpx.get(
+            url,
+            headers={"User-Agent": self.user_agent},
+            timeout=20.0,
+            follow_redirects=True,
+            verify=_SSL_CONTEXT,
+        )
         resp.raise_for_status()
         return resp.text
 

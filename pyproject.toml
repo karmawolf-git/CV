@@ -11,6 +11,7 @@ dependencies = [
     "anthropic>=0.40",
     "playwright>=1.44",
     "openpyxl>=3.1",
+    "truststore>=0.9",
 ]
 
 [project.optional-dependencies]
