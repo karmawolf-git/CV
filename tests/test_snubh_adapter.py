@@ -74,6 +74,24 @@ def test_trim_detail_returns_original_when_no_markers():
     assert snubh.trim_detail(html) == html
 
 
+def test_trim_detail_joins_cont_wrap_panels_and_caps_huge_papers():
+    # 탭 패널: 학력/경력 패널 + 거대한 논문 패널 + 부서 사이드바(제외돼야 함).
+    core = "직위 교수 학력 서울대 경력 분당서울대 학회 대한내과학회 수상 우수상 연구분야 종양"
+    huge_papers = "논문 " + ("Author A, Author B, Title X. Journal. " * 5000)  # 매우 큼
+    html = (
+        "<html><body>"
+        "<div class='sidebar'>" + ("다른의사 " * 5000) + "</div>"
+        "<div id='cont_wrap3'>" + core + "</div>"
+        "<div id='cont_wrap4'>" + huge_papers + "</div>"
+        "</body></html>"
+    )
+    out = snubh.trim_detail(html, per_block=6000, total_cap=16000)
+    assert "학력" in out and "경력" in out and "연구분야" in out  # 핵심 섹션 포함
+    assert "논문" in out  # 논문 패널도 일부 포함
+    assert "다른의사" not in out  # 사이드바 제외
+    assert len(out) <= 16000  # 상한 적용
+
+
 def test_iter_detail_urls_respects_limits():
     def fake_fetch(url):
         if url == snubh.dept_list_url():

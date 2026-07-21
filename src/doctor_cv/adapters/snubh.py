@@ -93,16 +93,24 @@ def parse_doctors(list_html: str) -> list[tuple[str, str, str, str]]:
     return out
 
 
-def trim_detail(html: str, *, max_len: int = 8000) -> str:
-    """drIntroduce.do 상세 HTML에서 해당 의사 프로필 블록만 잘라낸다.
+def trim_detail(html: str, *, max_len: int = 8000, per_block: int = 6000, total_cap: int = 16000) -> str:
+    """drIntroduce.do 상세 HTML에서 해당 의사 프로필만 잘라낸다.
 
-    상세 페이지는 매우 크고(부서 전체·숨김 탭 포함) 그대로 LLM에 넣으면 추출이 어긋난다.
-    '경력'과 ('학력' 또는 '약력')을 함께 담은 가장 작은 컨테이너를 찾아 반환한다.
-못 찾으면 원본을 반환한다(안전 폴백).
+    프로필은 탭 패널(id=cont_wrap1..N)로 나뉜다: 소개/전문분야/(학력·경력·연수·학회·수상·
+    연구분야)/논문·저서/언론. 논문 패널은 공저자까지 포함해 매우 클 수 있으므로(수십만 자)
+    패널마다 상한(per_block)을 두고 이어붙인 뒤 total_cap으로 자른다. 이렇게 하면
+    부서 전체 사이드바(수십만 자)는 빼고 해당 의사 전 섹션을 담는다.
+
+    cont_wrap 패널이 없으면, '경력'+('학력'|'약력')을 담은 가장 작은 블록으로 폴백한다.
     """
     soup = BeautifulSoup(html, "html.parser")
     for tag in soup(["script", "style"]):
         tag.decompose()
+
+    panels = soup.select('[id*="cont_wrap"]')
+    if panels:
+        parts = [p.get_text(" ", strip=True)[:per_block] for p in panels]
+        return "\n\n".join(x for x in parts if x)[:total_cap]
 
     best = None
     best_len = None
