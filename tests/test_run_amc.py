@@ -42,7 +42,8 @@ def test_crawl_amc_collects_doctors():
 
 
 def test_crawl_amc_isolates_detail_failure():
-    fail = {amc.detail_url("EMP_A", "D001")}
+    # EMP_A의 탭 하나라도 실패하면 그 의사만 건너뛴다.
+    fail = {amc.detail_tab_urls("EMP_A", "D001")[0]}
     doctors, errors = crawl_amc(
         _make_fetch(fail_urls=fail), _fake_extract, now="2026-07-21T00:00:00+00:00"
     )

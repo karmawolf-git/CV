@@ -12,7 +12,6 @@ import argparse
 from datetime import datetime, timezone
 
 from .adapters import amc
-from .crawl import crawl_details
 from .dotenv import load_env_file
 from .extractor import extract_doctor
 from .fetcher import Fetcher
@@ -20,14 +19,29 @@ from .store import dedup, save_doctors
 
 
 def crawl_amc(fetch, extract, *, now: str, max_depts=None, max_per_dept=None):
-    """AMC 상세 페이지를 순회·추출한다. 의사 단위로 오류를 격리한다.
+    """AMC 의사별로 프로필 탭(소개·학력/경력·학술활동)을 합쳐 추출한다. 의사 단위 오류 격리.
 
     반환: (doctors, errors) — errors는 (url, message) 리스트.
     """
-    urls = (u for _code, u in amc.iter_detail_urls(fetch, max_depts=max_depts, max_per_dept=max_per_dept))
-    return crawl_details(
-        urls, fetch, extract, hospital=amc.HOSPITAL_NAME, hospital_url=amc.BASE, now=now
-    )
+    doctors = []
+    errors = []
+    for code, emp_id in amc.iter_doctor_refs(fetch, max_depts=max_depts, max_per_dept=max_per_dept):
+        source = amc.detail_url(emp_id, code)
+        try:
+            combined = "\n".join(fetch(u) for u in amc.detail_tab_urls(emp_id, code))
+            doctors.append(
+                extract(
+                    combined,
+                    hospital=amc.HOSPITAL_NAME,
+                    hospital_url=amc.BASE,
+                    source_url=source,
+                    crawled_at=now,
+                )
+            )
+        except Exception as exc:  # noqa: BLE001 - 의사 단위 격리
+            errors.append((source, str(exc)))
+            print(f"[WARN] 상세 실패 {source}: {exc}")
+    return doctors, errors
 
 
 def main() -> None:

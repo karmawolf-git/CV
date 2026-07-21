@@ -38,6 +38,22 @@ def detail_url(emp_id: str, dept_code: str) -> str:
     return f"{BASE}{DETAIL_PATH}?{q}"
 
 
+# 프로필 탭: 1=소개(직위·전문분야·요약), 3=학력/경력, 5=학술활동(논문·저서 등).
+# changeTab(str)이 #tabIndex1을 세팅해 제출하므로 GET tabIndex1로 각 탭을 가져올 수 있다.
+PROFILE_TABS = ("1", "3", "5")
+
+
+def detail_tab_url(emp_id: str, dept_code: str, tab: str) -> str:
+    q = urlencode(
+        {"drEmpId": emp_id, "searchHpCd": dept_code, "searchKeyword": "", "pageIndex": "1", "tabIndex1": tab}
+    )
+    return f"{BASE}{DETAIL_PATH}?{q}"
+
+
+def detail_tab_urls(emp_id: str, dept_code: str) -> list[str]:
+    return [detail_tab_url(emp_id, dept_code, t) for t in PROFILE_TABS]
+
+
 def parse_dept_codes(index_html: str) -> list[str]:
     """목록 진입 HTML에서 진료과 코드를 순서 유지·중복 제거하여 반환."""
     return list(dict.fromkeys(_DEPT_RE.findall(index_html)))
@@ -48,11 +64,8 @@ def parse_doctor_ids(list_html: str) -> list[str]:
     return list(dict.fromkeys(m[0] for m in _DR_RE.findall(list_html)))
 
 
-def iter_detail_urls(fetch, *, max_depts: int | None = None, max_per_dept: int | None = None):
-    """``fetch(url)->html`` 콜러블로 상세 페이지 URL을 (dept_code, url)로 순차 생성.
-
-    empId 기준으로 전 진료과에 걸쳐 중복 제거한다.
-    """
+def iter_doctor_refs(fetch, *, max_depts: int | None = None, max_per_dept: int | None = None):
+    """``fetch(url)->html`` 콜러블로 (dept_code, emp_id)를 순차 생성. empId 기준 전역 중복 제거."""
     codes = parse_dept_codes(fetch(index_url()))
     if max_depts is not None:
         codes = codes[:max_depts]
@@ -65,4 +78,10 @@ def iter_detail_urls(fetch, *, max_depts: int | None = None, max_per_dept: int |
             if emp_id in seen:
                 continue
             seen.add(emp_id)
-            yield code, detail_url(emp_id, code)
+            yield code, emp_id
+
+
+def iter_detail_urls(fetch, *, max_depts: int | None = None, max_per_dept: int | None = None):
+    """(dept_code, 소개탭 URL) 생성 — 하위호환용. 전체 수집은 detail_tab_urls를 쓴다."""
+    for code, emp_id in iter_doctor_refs(fetch, max_depts=max_depts, max_per_dept=max_per_dept):
+        yield code, detail_url(emp_id, code)

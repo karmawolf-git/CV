@@ -54,16 +54,33 @@ EXTRACT_TOOL = {
                     "required": ["org"],
                 },
             },
-            "societies": {"type": "array", "items": {"type": "string"}},
-            "publications": {"type": "array", "items": {"type": "string"}},
+            "training": {
+                "type": "array",
+                "description": "연수/펠로우십",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "org": {"type": "string"},
+                        "role": {"type": ["string", "null"]},
+                        "period": {"type": ["string", "null"]},
+                    },
+                    "required": ["org"],
+                },
+            },
+            "societies": {"type": "array", "items": {"type": "string"}, "description": "학회활동"},
+            "awards": {"type": "array", "items": {"type": "string"}, "description": "수상이력"},
+            "research": {"type": "array", "items": {"type": "string"}, "description": "연구분야"},
+            "publications": {"type": "array", "items": {"type": "string"}, "description": "논문·저서"},
         },
         "required": ["name"],
     },
 }
 
 PROMPT = (
-    "다음은 한 병원의 의료진 소개 페이지 텍스트다. 여기서 의사 1명의 경력 정보를 "
-    "record_doctor 도구 스키마에 맞춰 추출하라. 페이지에 없는 항목은 빈 배열이나 null로 두고, "
+    "다음은 한 병원의 의료진 소개 페이지 텍스트다(여러 탭 내용이 이어져 있을 수 있다). "
+    "여기서 의사 1명의 경력 정보를 record_doctor 도구 스키마에 맞춰 추출하라. "
+    "학력·경력·연수·학회활동·수상이력·연구분야·논문/저서 각 항목의 **모든 항목을 빠짐없이** "
+    "추출하라(요약하거나 개수를 줄이지 마라). 페이지에 없는 항목만 빈 배열이나 null로 두고, "
     "지어내지 마라. 개인 연락처는 수집하지 마라.\n\n---\n"
 )
 
@@ -112,7 +129,7 @@ def extract_doctor(
     content = clean_html(html)
     message = client.messages.create(
         model=model,
-        max_tokens=2000,
+        max_tokens=8000,
         tools=[EXTRACT_TOOL],
         tool_choice={"type": "tool", "name": "record_doctor"},
         messages=[{"role": "user", "content": PROMPT + content}],
