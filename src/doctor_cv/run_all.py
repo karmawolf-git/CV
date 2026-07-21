@@ -15,12 +15,13 @@ from __future__ import annotations
 import argparse
 from datetime import datetime, timezone
 
-from .adapters import cmc
+from .adapters import cmc, kumc
 from .dotenv import load_env_file
 from .extractor import extract_doctor
 from .fetcher import Fetcher
 from .run_amc import crawl_amc
 from .run_cmc import crawl_cmc_hospital
+from .run_kumc import crawl_kumc_hospital
 from .run_smc import crawl_smc
 from .run_snubh import crawl_snubh
 from .store import dedup, save_doctors
@@ -38,11 +39,22 @@ def run_all(fetch, *, now, extract, max_depts=None, max_per_dept=None, include_l
     all_docs = []
     summary = {}
 
-    for h in cmc.HOSPITALS:  # CMC 계열 (무료)
+    for h in cmc.HOSPITALS:  # CMC 계열 (JSON, 무료)
         try:
             docs, errs = crawl_cmc_hospital(
                 fetch, hospital=h["name"], base_url=h["base_url"], now=now,
                 max_depts=max_depts, max_per_dept=max_per_dept,
+            )
+        except Exception as exc:  # noqa: BLE001
+            docs, errs = [], [(h["base_url"], str(exc))]
+        all_docs.extend(docs)
+        summary[h["name"]] = {"doctors": len(docs), "error": errs[0][1] if errs else None}
+
+    for h in kumc.HOSPITALS:  # 고려대의료원 (JSON, 무료). 병원당 max_per_dept명 제한.
+        try:
+            docs, errs = crawl_kumc_hospital(
+                fetch, hospital=h["name"], base_url=h["base_url"],
+                inst_no=h["inst_no"], now=now, max_doctors=max_per_dept,
             )
         except Exception as exc:  # noqa: BLE001
             docs, errs = [], [(h["base_url"], str(exc))]
