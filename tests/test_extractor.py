@@ -24,6 +24,27 @@ class FakeClient:
         return SimpleNamespace(content=[block])
 
 
+def test_extract_doctor_coerces_dict_societies_to_strings():
+    # LLM이 학회활동/수상 등을 dict 리스트로 반환해도 문자열로 강제되어 검증을 통과한다.
+    fake = FakeClient(
+        {
+            "name": "김의사",
+            "societies": [{"org": "대한내과학회", "role": "이사", "period": "2021"}],
+            "awards": [{"title": "우수상", "year": "2020"}],
+            "research": ["종양학"],
+        }
+    )
+    doctor = extract_doctor(
+        html="<html><body>x</body></html>",
+        hospital="H", hospital_url="https://h", source_url="https://h/1",
+        crawled_at="2026-07-21T00:00:00+00:00", client=fake, model="claude-sonnet-5",
+    )
+    assert isinstance(doctor, Doctor)
+    assert doctor.societies == ["대한내과학회 이사 2021"]
+    assert doctor.awards == ["우수상 2020"]
+    assert doctor.research == ["종양학"]
+
+
 def test_extract_doctor_returns_validated_model():
     fake = FakeClient(
         {

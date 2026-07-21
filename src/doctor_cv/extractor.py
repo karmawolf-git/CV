@@ -135,7 +135,7 @@ def extract_doctor(
         messages=[{"role": "user", "content": PROMPT + content}],
     )
     tool_use = next(b for b in message.content if getattr(b, "type", None) == "tool_use")
-    data = dict(tool_use.input)
+    data = _normalize(dict(tool_use.input))
     data.update(
         hospital=hospital,
         hospital_url=hospital_url,
@@ -143,3 +143,21 @@ def extract_doctor(
         crawled_at=crawled_at,
     )
     return Doctor(**data)
+
+
+def _as_str(v) -> str:
+    """dict/기타를 문자열로. LLM이 학회/수상 등을 객체로 반환해도 견디게 한다."""
+    if isinstance(v, str):
+        return v
+    if isinstance(v, dict):
+        return " ".join(str(x).strip() for x in v.values() if x not in (None, ""))
+    return str(v)
+
+
+def _normalize(data: dict) -> dict:
+    """문자열 리스트 필드(societies/awards/research/publications)에 dict가 와도 문자열로 강제."""
+    for key in ("societies", "awards", "research", "publications"):
+        val = data.get(key)
+        if isinstance(val, list):
+            data[key] = [_as_str(v) for v in val if v not in (None, "")]
+    return data
