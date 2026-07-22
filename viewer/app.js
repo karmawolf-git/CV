@@ -39,8 +39,11 @@ function render() {
       (!hospital || d.hospital === hospital) &&
       (!dept || d.department === dept)
   );
-  document.getElementById("count").textContent = `${filtered.length}명`;
-  document.getElementById("list").innerHTML = filtered.map(card).join("");
+  const LIMIT = 100; // 대량 데이터에서 렌더링 과부하 방지(필터로 좁혀서 확인)
+  const shown = filtered.slice(0, LIMIT);
+  document.getElementById("count").textContent =
+    filtered.length > LIMIT ? `${filtered.length}명 (상위 ${LIMIT}명 표시 — 병원/진료과/이름으로 좁혀보세요)` : `${filtered.length}명`;
+  document.getElementById("list").innerHTML = shown.map(card).join("");
 }
 
 function listBlock(title, items) {

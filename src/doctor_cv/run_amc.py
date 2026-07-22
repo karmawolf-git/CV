@@ -51,10 +51,13 @@ def main() -> None:
     parser.add_argument("--min-delay", type=float, default=2.0)
     parser.add_argument("--max-depts", type=int, default=None, help="진료과 수 제한")
     parser.add_argument("--max-per-dept", type=int, default=None, help="진료과당 의사 수 제한")
+    parser.add_argument("--depts", default=None, help='진료과명 부분일치, 쉼표구분')
     args = parser.parse_args()
 
     # 저장소 루트의 .env(gitignore됨)에서 ANTHROPIC_API_KEY 등을 로드(기존 env 우선).
     load_env_file(".env")
+
+    from .deptfilter import parse_depts_arg
 
     fetcher = Fetcher(cache_dir=args.cache, min_delay=args.min_delay)
     now = datetime.now(timezone.utc).isoformat()
@@ -65,6 +68,7 @@ def main() -> None:
         now=now,
         max_depts=args.max_depts,
         max_per_dept=args.max_per_dept,
+        depts=parse_depts_arg(args.depts),
     )
     result = dedup(doctors)
     save_doctors(result, args.out)
