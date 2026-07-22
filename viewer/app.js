@@ -1,10 +1,24 @@
-const DATA_URL = new URLSearchParams(location.search).get("data") || "sample-doctors.json";
+// 단일 파일(?data=...) 또는 병원별 분할(data/manifest.json + data/<file>) 로드.
+// GitHub Pages가 수 MB 단일 파일을 잘 못 내보내서, 기본은 병원별 작은 파일로 나눠 받는다.
+const SINGLE = new URLSearchParams(location.search).get("data");
 
 let doctors = [];
 
 async function load() {
-  const res = await fetch(DATA_URL);
-  doctors = await res.json();
+  try {
+    if (SINGLE) {
+      doctors = await (await fetch(SINGLE)).json();
+    } else {
+      const manifest = await (await fetch("data/manifest.json")).json();
+      const parts = await Promise.all(
+        manifest.map((m) => fetch("data/" + m.file).then((r) => r.json()))
+      );
+      doctors = parts.flat();
+    }
+  } catch (e) {
+    document.getElementById("count").textContent = "데이터 로드 실패: " + e.message;
+    return;
+  }
   initFilters();
   render();
 }
