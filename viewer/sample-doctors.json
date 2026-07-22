@@ -5,15 +5,44 @@
     "name": "홍길동",
     "position": "교수",
     "department": "정형외과",
-    "specialty": ["척추"],
+    "specialty": ["척추", "척추측만증", "최소침습수술"],
     "profile_url": "https://www.amc.seoul.kr/doctor/1",
     "photo_url": null,
-    "education": [{"institution": "서울대 의대", "degree": "의학박사", "year": "2005"}],
-    "licenses": [],
-    "career": [{"org": "서울아산병원", "role": "전임의", "period": "2006-2008"}],
-    "societies": ["대한정형외과학회"],
-    "publications": [],
+    "education": [
+      {"institution": "서울대학교 의과대학", "degree": "의학박사", "year": "2005"},
+      {"institution": "서울대학교 의과대학", "degree": "의학사", "year": "1998"}
+    ],
+    "licenses": [{"name": "정형외과 전문의", "year": "2003"}],
+    "career": [
+      {"org": "서울아산병원", "role": "교수", "period": "2012-현재"},
+      {"org": "서울아산병원", "role": "전임의", "period": "2006-2008"}
+    ],
+    "training": [{"org": "Mayo Clinic", "role": "척추외과 연수", "period": "2010-2011"}],
+    "societies": ["대한정형외과학회", "대한척추외과학회"],
+    "awards": ["대한정형외과학회 학술상 (2018)"],
+    "research": ["척추 변형 교정", "인공디스크 치환술"],
+    "publications": ["Minimally invasive spine surgery outcomes, Spine, 2019"],
     "source_url": "https://www.amc.seoul.kr/doctor/1",
+    "crawled_at": "2026-07-20T00:00:00+00:00"
+  },
+  {
+    "hospital": "삼성서울병원",
+    "hospital_url": "https://www.samsunghospital.com",
+    "name": "김영희",
+    "position": "임상조교수",
+    "department": "내분비내과",
+    "specialty": ["당뇨병", "갑상선"],
+    "profile_url": "https://www.samsunghospital.com/doctor/2",
+    "photo_url": null,
+    "education": [{"institution": "연세대학교 의과대학", "degree": "의학박사", "year": "2011"}],
+    "licenses": [{"name": "내분비대사내과 세부전문의", "year": "2014"}],
+    "career": [{"org": "삼성서울병원", "role": "임상조교수", "period": "2016-현재"}],
+    "training": [],
+    "societies": ["대한당뇨병학회", "대한내분비학회"],
+    "awards": [],
+    "research": ["제2형 당뇨병 합병증"],
+    "publications": [],
+    "source_url": "https://www.samsunghospital.com/doctor/2",
     "crawled_at": "2026-07-20T00:00:00+00:00"
   }
 ]
