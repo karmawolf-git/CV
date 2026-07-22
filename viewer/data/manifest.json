@@ -1,0 +1,52 @@
+[
+  {
+    "file": "h73221.json",
+    "hospital": "가톨릭대학교 서울성모병원",
+    "count": 224
+  },
+  {
+    "file": "h5871.json",
+    "hospital": "가톨릭대학교 부천성모병원",
+    "count": 69
+  },
+  {
+    "file": "h21645.json",
+    "hospital": "가톨릭대학교 은평성모병원",
+    "count": 105
+  },
+  {
+    "file": "h10760.json",
+    "hospital": "가톨릭대학교 성빈센트병원",
+    "count": 128
+  },
+  {
+    "file": "h79116.json",
+    "hospital": "고려대학교 안암병원",
+    "count": 138
+  },
+  {
+    "file": "h15515.json",
+    "hospital": "고려대학교 구로병원",
+    "count": 138
+  },
+  {
+    "file": "h1378.json",
+    "hospital": "고려대학교 안산병원",
+    "count": 101
+  },
+  {
+    "file": "smc.json",
+    "hospital": "삼성서울병원",
+    "count": 124
+  },
+  {
+    "file": "snubh.json",
+    "hospital": "분당서울대학교병원",
+    "count": 142
+  },
+  {
+    "file": "amc.json",
+    "hospital": "서울아산병원",
+    "count": 164
+  }
+]
