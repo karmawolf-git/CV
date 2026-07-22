@@ -19,6 +19,9 @@ HOSPITAL_NAME = "서울아산병원"
 BASE = "https://www.amc.seoul.kr"
 LIST_PATH = "/asan/staff/base/staffBaseInfoList.do"
 DETAIL_PATH = "/asan/staff/base/staffBaseInfoDetail.do"
+# 목록 페이지(staffBaseInfoList)는 초성 'ㄱ~ㄹ' 12개 과만 노출한다.
+# 전체 진료과(135개)는 allDept 팝업에 fnSelectDeptPopup으로 들어 있어 이걸로 열거한다.
+ALLDEPT_PATH = "/asan/common/dept/allDept.do"
 
 _DEPT_RE = re.compile(r"fnSelectDeptPopup\('([^']+)'\)")
 # 진료과 링크: <a ... onclick="fnSelectDeptPopup('D001')...">가정의학과</a>
@@ -30,6 +33,14 @@ _DR_RE = re.compile(r"fnDrDetail\('([^']+)','([^']+)'\)")
 
 def index_url() -> str:
     return f"{BASE}{LIST_PATH}"
+
+
+def dept_index_url() -> str:
+    """전체 진료과 목록(135개)이 있는 allDept 팝업 URL."""
+    q = urlencode(
+        {"drUseYn": "Y", "cmeUseYn": "N", "thUseYn": "N", "allowDept": "N", "deptFunc": "fnSelectDeptPopup"}
+    )
+    return f"{BASE}{ALLDEPT_PATH}?{q}"
 
 
 def list_url(dept_code: str) -> str:
@@ -86,7 +97,7 @@ def iter_doctor_refs(fetch, *, max_depts=None, max_per_dept=None, depts=None):
     """
     from ..deptfilter import dept_matches
 
-    index_html = fetch(index_url())
+    index_html = fetch(dept_index_url())  # 전체 진료과(allDept)에서 열거
     if depts:
         codes = [cd for cd, nm in parse_departments(index_html) if dept_matches(nm, depts)]
     else:

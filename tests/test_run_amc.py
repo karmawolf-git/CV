@@ -13,7 +13,7 @@ def _make_fetch(fail_urls=()):
     def fetch(url):
         if url in fail_urls:
             raise RuntimeError("boom")
-        if url == amc.index_url():
+        if url == amc.dept_index_url():
             return INDEX_HTML
         if amc.LIST_PATH in url and "drEmpId=&" in url + "&":
             return LIST_HTML

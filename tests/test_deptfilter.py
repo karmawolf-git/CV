@@ -40,7 +40,7 @@ def test_amc_iter_filters_by_dept():
     LIST = "<a onclick=\"fnDrDetail('E1','D001');\"></a>"
 
     def fetch(url):
-        return INDEX if url == amc.index_url() else LIST
+        return INDEX if url == amc.dept_index_url() else LIST
 
     refs = list(amc.iter_doctor_refs(fetch, depts=["가정의학과"]))
     assert refs == [("D001", "E1")]  # 피부과(D003)는 제외

@@ -40,7 +40,7 @@ def test_iter_detail_urls_dedups_across_depts_and_respects_limits():
 
     def fake_fetch(url):
         calls.append(url)
-        if url == amc.index_url():
+        if url == amc.dept_index_url():
             return INDEX_HTML
         return LIST_HTML  # 두 진료과 모두 EMP_A, EMP_B 반환
 
