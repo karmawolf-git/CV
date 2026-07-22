@@ -1,0 +1,19 @@
+[
+  {
+    "hospital": "서울아산병원",
+    "hospital_url": "https://www.amc.seoul.kr",
+    "name": "홍길동",
+    "position": "교수",
+    "department": "정형외과",
+    "specialty": ["척추"],
+    "profile_url": "https://www.amc.seoul.kr/doctor/1",
+    "photo_url": null,
+    "education": [{"institution": "서울대 의대", "degree": "의학박사", "year": "2005"}],
+    "licenses": [],
+    "career": [{"org": "서울아산병원", "role": "전임의", "period": "2006-2008"}],
+    "societies": ["대한정형외과학회"],
+    "publications": [],
+    "source_url": "https://www.amc.seoul.kr/doctor/1",
+    "crawled_at": "2026-07-20T00:00:00+00:00"
+  }
+]
