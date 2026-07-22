@@ -90,10 +90,11 @@ def main() -> None:
     parser.add_argument("--json-per-dept", type=int, default=15, help="JSON 병원(cmc/kumc) 과당 상한")
     parser.add_argument("--max-depts", type=int, default=None, help="과 선별 안 할 때 진료과 수 제한")
     parser.add_argument("--no-llm", action="store_true", help="JSON 병원만 수집(무료)")
+    parser.add_argument("--cache-only", action="store_true", help="캐시된 페이지만으로 재구성(신규 요청 안 함)")
     args = parser.parse_args()
 
     load_env_file(".env")
-    fetcher = Fetcher(cache_dir=args.cache, min_delay=args.min_delay)
+    fetcher = Fetcher(cache_dir=args.cache, min_delay=args.min_delay, offline=args.cache_only)
     now = datetime.now(timezone.utc).isoformat()
 
     from .deptfilter import parse_depts_arg

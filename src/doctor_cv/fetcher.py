@@ -46,10 +46,11 @@ def looks_unrendered(html: str) -> bool:
 
 
 class Fetcher:
-    def __init__(self, cache_dir: str | Path, user_agent: str = DEFAULT_UA, min_delay: float = 1.0):
+    def __init__(self, cache_dir: str | Path, user_agent: str = DEFAULT_UA, min_delay: float = 1.0, offline: bool = False):
         self.cache_dir = Path(cache_dir)
         self.user_agent = user_agent
         self.min_delay = min_delay
+        self.offline = offline  # True면 캐시에 없을 때 네트워크 대신 예외(오프라인 재구성)
         self._robots: dict[str, RobotFileParser] = {}
         self._last_request = 0.0
 
@@ -111,6 +112,9 @@ class Fetcher:
         cache = self.cache_path(url)
         if cache.exists():
             return cache.read_text(encoding="utf-8")
+
+        if self.offline:
+            raise FileNotFoundError(f"cache miss (offline): {url}")
 
         if check_robots and not self.allowed(url):
             raise PermissionError(f"robots.txt disallows: {url}")

@@ -40,6 +40,19 @@ def test_fetch_uses_cache_when_present(tmp_path):
     assert calls["static"] == 0  # 네트워크 미접근
 
 
+def test_offline_returns_cache_and_raises_on_miss(tmp_path):
+    f = Fetcher(cache_dir=tmp_path, min_delay=0.0, offline=True)
+    url = "https://ex.com/cached"
+    cp = f.cache_path(url)
+    cp.parent.mkdir(parents=True, exist_ok=True)
+    cp.write_text("<html>HIT</html>", encoding="utf-8")
+    assert "HIT" in f.fetch(url)  # 캐시 있으면 반환
+    import pytest
+
+    with pytest.raises(FileNotFoundError):
+        f.fetch("https://ex.com/missing")  # 캐시 없으면 예외(네트워크 안 감)
+
+
 def test_fetch_falls_back_to_dynamic(tmp_path):
     f = Fetcher(cache_dir=tmp_path, min_delay=0.0)
     calls = {"dynamic": 0}
