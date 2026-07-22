@@ -33,13 +33,20 @@ function fill(id, values) {
   }
 }
 
+function haystack(d) {
+  return [d.name, d.hospital, d.department, d.position, ...(d.specialty || [])]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+}
+
 function render() {
-  const q = document.getElementById("search").value.trim();
+  const q = document.getElementById("search").value.trim().toLowerCase();
   const hospital = document.getElementById("hospital").value;
   const dept = document.getElementById("dept").value;
   const filtered = doctors.filter(
     (d) =>
-      (!q || (d.name || "").includes(q)) &&
+      (!q || haystack(d).includes(q)) &&
       (!hospital || d.hospital === hospital) &&
       (!dept || d.department === dept)
   );
