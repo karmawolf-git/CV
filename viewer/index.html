@@ -69,6 +69,11 @@
       padding: 1rem 1.1rem; box-shadow: var(--shadow); transition: box-shadow .15s, transform .15s;
     }
     .card:hover { box-shadow: var(--shadow-hover); transform: translateY(-1px); }
+    /* 상세 경력을 펼치면 카드가 한 줄 전체로 넓어지고 내용은 여러 열로 배치 */
+    .card.expanded { grid-column: 1 / -1; box-shadow: var(--shadow-hover); border-color: var(--accent); }
+    .card.expanded:hover { transform: none; }
+    .card.expanded .detail { columns: 280px auto; column-gap: 1.6rem; }
+    .card.expanded .section { break-inside: avoid; }
     .card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: .5rem; }
     .name { font-size: 1.1rem; font-weight: 700; margin: 0; letter-spacing: -.01em; }
     .pos { color: var(--muted); font-size: .8rem; margin-top: .1rem; }
@@ -120,6 +125,6 @@
     <div class="grid" id="list"></div>
     <button class="more" id="more" hidden>더 보기</button>
   </main>
-  <script src="app.js?v=4"></script>
+  <script src="app.js?v=5"></script>
 </body>
 </html>

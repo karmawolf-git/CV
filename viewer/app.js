@@ -32,6 +32,15 @@ async function load() {
     shownCount += PAGE;
     renderList();
   });
+  // 상세 경력을 펼치면 카드에 expanded 클래스를 붙여 가로로 넓힌다 (toggle 이벤트는 버블링 안 하므로 capture로 위임)
+  document.getElementById("list").addEventListener(
+    "toggle",
+    (e) => {
+      if (e.target.tagName !== "DETAILS") return;
+      e.target.closest(".card").classList.toggle("expanded", e.target.open);
+    },
+    true
+  );
   apply();
 }
 
@@ -131,7 +140,7 @@ function card(d) {
     </div>
     ${d.department ? `<span class="dept">${escapeHtml(d.department)}</span>` : ""}
     ${d.specialty && d.specialty.length ? `<div class="specialty"><span>전문분야</span> ${escapeHtml(d.specialty.join(", "))}</div>` : ""}
-    ${detail ? `<details><summary>상세 경력</summary>${detail}</details>` : ""}
+    ${detail ? `<details><summary>상세 경력</summary><div class="detail">${detail}</div></details>` : ""}
     ${src}
   </div>`;
 }
